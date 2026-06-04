@@ -35,6 +35,16 @@ export class ClaudeCodeClient implements LLMClient {
         stdio: ["pipe", "pipe", "pipe"],
       });
 
+      const timeout = setTimeout(() => {
+        child.kill();
+        reject(
+          new Error(
+            `claude-code request timed out after ${this.requestTimeoutMs}ms`,
+          ),
+        );
+      }, this.requestTimeoutMs);
+      timeout.unref();
+
       let stdout = "";
       let stderr = "";
 
