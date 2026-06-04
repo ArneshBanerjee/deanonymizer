@@ -375,7 +375,7 @@ ${SCHEMA_HINT}`;
           maxTokens: 2200,
           json: true,
         }),
-        70000,
+        llm.requestTimeoutMs ?? 70000,
         `chunk ${currentChunk}/${totalChunks}`,
       );
     } catch {
@@ -411,7 +411,9 @@ ${SCHEMA_HINT}`;
           maxTokens: 1100,
           json: true,
         }),
-        45000,
+        llm.requestTimeoutMs
+          ? Math.round(llm.requestTimeoutMs * 0.6)
+          : 45000,
         `compressed chunk ${currentChunk}/${totalChunks}`,
       );
     } finally {

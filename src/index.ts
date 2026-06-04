@@ -43,7 +43,7 @@ program
   )
   .option(
     "--provider <name>",
-    "LLM provider: 'anthropic' or 'openai' (default: auto-detect from env)",
+    "LLM provider: 'anthropic', 'openai', or 'claude-code' (default: auto-detect from env)",
   )
   .option(
     "--base-url <url>",

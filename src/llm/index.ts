@@ -1,4 +1,5 @@
 import { AnthropicClient } from "./anthropic.js";
+import { ClaudeCodeClient } from "./claude-code.js";
 import { OpenAIClient } from "./openai.js";
 import type { LLMClient, Provider } from "./types.js";
 
@@ -18,9 +19,9 @@ type Env = Record<string, string | undefined>;
 
 function normalizeProvider(value: string): Provider {
   const p = value.trim().toLowerCase();
-  if (p === "anthropic" || p === "openai") return p;
+  if (p === "anthropic" || p === "openai" || p === "claude-code") return p;
   throw new Error(
-    `Unknown LLM provider "${value}". Use "anthropic" or "openai".`,
+    `Unknown LLM provider "${value}". Use "anthropic", "openai", or "claude-code".`,
   );
 }
 
@@ -45,7 +46,8 @@ export function resolveProvider(
   throw new Error(
     "No LLM provider configured. Set OPENAI_API_KEY (optionally with " +
       "OPENAI_BASE_URL for Gemini/Ollama/etc.) or ANTHROPIC_API_KEY, or pass " +
-      "--provider/--base-url.",
+      "--provider/--base-url. Pass --provider claude-code to route through the " +
+      "Claude Code CLI without an API key.",
   );
 }
 
@@ -55,6 +57,13 @@ export function createLLMClient(
   env: Env = process.env,
 ): LLMClient {
   const provider = resolveProvider(overrides, env);
+
+  if (provider === "claude-code") {
+    return new ClaudeCodeClient({
+      bin: env.CLAUDE_CODE_BIN,
+      model: overrides.model ?? env.CLAUDE_CODE_MODEL,
+    });
+  }
 
   if (provider === "anthropic") {
     const apiKey = env.ANTHROPIC_API_KEY;
