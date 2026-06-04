@@ -1,5 +1,5 @@
 import type { Item, Profile } from "../types.js";
-import { fetchAndExtractText, normalizeUrl } from "./web.js";
+import { fetchAndExtractSite, normalizeUrl } from "./web.js";
 
 /**
  * GitHub ingestion via the public REST API. No auth required for low-volume
@@ -31,7 +31,11 @@ interface GHEvent {
   repo?: { name?: string };
   created_at: string;
   payload?: {
-    commits?: Array<{ sha: string; message: string }>;
+    commits?: Array<{
+      sha: string;
+      message: string;
+      author?: { name?: string; email?: string };
+    }>;
     issue?: { title?: string; body?: string; html_url?: string };
     comment?: { body?: string; html_url?: string };
     pull_request?: { title?: string; body?: string; html_url?: string };
@@ -83,13 +87,22 @@ function eventToItems(e: GHEvent): Item[] {
   switch (e.type) {
     case "PushEvent": {
       for (const c of e.payload?.commits ?? []) {
-        if (!c.message) continue;
+        if (!c.message && !c.author?.email && !c.author?.name) continue;
+        // Author name/email from commit metadata is a top-tier identity leak
+        // — many users leak a real email here while keeping the GitHub UI
+        // pointed at a noreply address. Prepend it to the body so the
+        // analyzer sees it as part of the commit content.
+        const authorLine =
+          c.author?.email || c.author?.name
+            ? `Commit author: ${c.author?.name ?? "(no name)"} <${c.author?.email ?? "(no email)"}>`
+            : "";
+        const body = [authorLine, c.message].filter(Boolean).join("\n");
         items.push({
           platform: "github",
           id: `${e.id}-${c.sha}`,
           kind: "post",
-          context: `commit r/${repo}`,
-          body: c.message,
+          context: `commit ${repo}`,
+          body,
           createdUtc: t,
           permalink: `https://github.com/${repo}/commit/${c.sha}`,
         });
@@ -199,14 +212,14 @@ export async function fetchGitHub(
   if (profile?.blog) {
     const url = normalizeUrl(profile.blog);
     if (url) {
-      const text = await fetchAndExtractText(url);
+      const text = await fetchAndExtractSite(url);
       if (text && text.length > 80) {
         items.push({
           platform: "github",
           id: `${user}-blog`,
           kind: "post",
-          context: "external site (linked from github profile)",
-          body: text.slice(0, 12000),
+          context: "external site + sub-pages (linked from github profile)",
+          body: text.slice(0, 24000),
           createdUtc: Math.floor(Date.now() / 1000),
           permalink: url,
         });

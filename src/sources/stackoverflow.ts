@@ -1,5 +1,5 @@
 import type { Item, Profile } from "../types.js";
-import { fetchAndExtractText, normalizeUrl } from "./web.js";
+import { fetchAndExtractSite, normalizeUrl } from "./web.js";
 
 /**
  * Stack Overflow ingestion via the Stack Exchange API v2.3. No auth required
@@ -158,14 +158,14 @@ export async function fetchStackOverflow(
   if (user.website_url) {
     const url = normalizeUrl(user.website_url);
     if (url) {
-      const text = await fetchAndExtractText(url);
+      const text = await fetchAndExtractSite(url);
       if (text && text.length > 80) {
         items.push({
           platform: "stackoverflow",
           id: `${userId}-website`,
           kind: "post",
-          context: "external site (linked from stackoverflow profile)",
-          body: text.slice(0, 12000),
+          context: "external site + sub-pages (linked from stackoverflow profile)",
+          body: text.slice(0, 24000),
           createdUtc: user.creation_date,
           permalink: url,
         });

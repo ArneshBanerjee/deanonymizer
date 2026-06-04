@@ -74,4 +74,17 @@ export interface AuditResult {
   summary: string;
   identity: IdentityProof;
   findings: Finding[];
+  /**
+   * Deterministic regex-extracted identifiers, in addition to whatever the
+   * model surfaces in findings. These are pulled straight from item bodies
+   * so they always appear in the report regardless of LLM behaviour.
+   */
+  directIdentifiers?: {
+    emails: string[];
+    socialHandles: Array<{
+      platform: string;
+      handle: string;
+      url: string;
+    }>;
+  };
 }
