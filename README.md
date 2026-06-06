@@ -222,8 +222,9 @@ npm run build
 ## Continuous integration
 
 A GitHub Actions workflow at `.github/workflows/ci.yml` runs `npm run
-build`, `npm test`, `npm run format:check`, and `npm run lint` on every
-push and pull request, against the latest LTS Node release.
+lint`, `npm run format:check`, `tsc --noEmit`, `npm test`, and `npm run
+build` on every push and pull request against `main`, across a Node 20 /
+22 / 24 matrix.
 
 ## Limitations
 
